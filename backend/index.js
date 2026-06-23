@@ -201,7 +201,10 @@ app.post("/waitlist", async (req, res) => {
 });
 
 app.get("/", (req, res) => {
-  res.sendFile(path.join(process.cwd(), "..", "frontend", "public", "index.html"));
+  res.json({
+    status: "ok",
+    message: "Meridian backend is running!"
+  });
 });
 
 app.listen(process.env.PORT, () => {
