@@ -1,12 +1,23 @@
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
+import { createClient } from "@supabase/supabase-js";
 
 dotenv.config();
 
 const app = express();
-app.use(cors());
+
+app.use(cors({
+  origin: "*",
+  methods: ["GET", "POST"],
+}));
+
 app.use(express.json());
+
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_KEY
+);
 
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
 
@@ -92,13 +103,20 @@ app.post("/waitlist", async (req, res) => {
     if (!email || !email.includes("@")) {
       return res.json({ error: "invalid email" });
     }
-    console.log("New waitlist signup:", email);
+    const { error } = await supabase.from("waitlist").insert({ email });
+    if (error) {
+      if (error.code === "23505") {
+        return res.json({ message: "you're already on the list!" });
+      }
+      return res.json({ error: "something went wrong, try again" });
+    }
     res.json({ message: "you're on the list. we'll reach out soon." });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-app.listen(process.env.PORT, () => {
-  console.log(`Meridian backend running on port ${process.env.PORT}`);
+const PORT = process.env.PORT || 3001;
+app.listen(PORT, () => {
+  console.log(`Meridian backend running on port ${PORT}`);
 });
